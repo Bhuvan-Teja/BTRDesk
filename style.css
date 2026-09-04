@@ -445,7 +445,15 @@ input,select,textarea{ font-family:inherit; color:inherit; }
   background:var(--surface); border-radius:14px; box-shadow:var(--shadow-lg);
   width:100%; max-width:420px; padding:22px 22px 18px; max-height:88vh; overflow-y:auto;
 }
+.modal.wide{ max-width:560px; }
 .modal h2{ font-family:'Fraunces',Georgia,serif; font-size:1.15rem; margin-bottom:16px; }
+.modal h3{ font-size:.85rem; margin:20px 0 8px; }
+.modal p{ margin:0 0 10px; font-size:.85rem; line-height:1.55; color:var(--text-muted); }
+.modal ol, .modal ul{ margin:0 0 10px; padding-left:20px; font-size:.85rem; line-height:1.6; color:var(--text-muted); }
+.modal ol li, .modal ul li{ margin-bottom:5px; }
+.modal a{ color:var(--accent); }
+.modal code{ font-family:'IBM Plex Mono',monospace; font-size:.82em; background:var(--surface-2); padding:1px 5px; border-radius:4px; }
+.modal .callout{ font-size:.78rem; color:var(--text-faint); background:var(--surface-2); border-radius:8px; padding:10px 12px; margin-top:4px; }
 .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
 .field label{ font-size:.72rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-faint); }
 .field input[type="text"], .field input[type="number"], .field input[type="date"], .field input[type="time"], .field select, .field textarea{

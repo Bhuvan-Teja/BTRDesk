@@ -948,8 +948,8 @@
   var overlay = document.getElementById('modalOverlay');
   var modalEl = document.getElementById('modal');
 
-  function closeModal() { overlay.classList.remove('open'); modalEl.innerHTML = ''; }
-  function openModal(html) { modalEl.innerHTML = html; overlay.classList.add('open'); }
+  function closeModal() { overlay.classList.remove('open'); modalEl.innerHTML = ''; modalEl.classList.remove('wide'); }
+  function openModal(html, wide) { modalEl.innerHTML = html; modalEl.classList.toggle('wide', !!wide); overlay.classList.add('open'); }
 
   overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
@@ -1377,6 +1377,48 @@
     reader.readAsText(file);
     e.target.value = '';
   });
+
+  // ---------- about / cross-machine sync instructions ----------
+  var REPO_URL = 'https://github.com/Bhuvan-Teja/BTRDesk';
+  function aboutModal() {
+    openModal(
+      '<h2>About BTR\'s Desk</h2>'
+      + '<p>A minimal, single-user tool for allocating time across projects and '
+      + 'capturing meeting notes. No backend — everything lives in this browser\'s '
+      + 'local storage, and the app itself is just static files served from '
+      + '<a href="' + REPO_URL + '" target="_blank" rel="noopener">this GitHub repo</a>.</p>'
+
+      + '<h3>Move your data to another machine</h3>'
+      + '<p>Opening this app on a different computer starts with a blank slate — '
+      + 'local storage doesn\'t travel with the page. To carry your tasks and notes '
+      + 'over, hand them through the repo\'s <code>sync/backup.json</code> file:</p>'
+
+      + '<p><b>On the machine with your current data:</b></p>'
+      + '<ol>'
+      + '<li>Click <b>Export backup</b> (bottom-left) — saves <code>btrdesk-backup-&lt;date&gt;.json</code> to Downloads.</li>'
+      + '<li>Go to <a href="' + REPO_URL + '/tree/main/sync" target="_blank" rel="noopener">the sync folder</a> on GitHub → '
+      + '<b>Add file → Upload files</b> → drag in that file, rename it to exactly <code>backup.json</code>, and commit '
+      + '(GitHub will warn the file already exists — that\'s expected, confirm the replace).</li>'
+      + '</ol>'
+
+      + '<p><b>On the machine you\'re moving to:</b></p>'
+      + '<ol>'
+      + '<li>Go to <a href="' + REPO_URL + '/blob/main/sync/backup.json" target="_blank" rel="noopener">sync/backup.json</a> on GitHub → click the download icon → save it.</li>'
+      + '<li>Click <b>Import</b> (next to Export backup) → pick the file you just downloaded.</li>'
+      + '</ol>'
+
+      + '<div class="callout">No merge — whichever copy you push last completely overwrites the '
+      + 'other. Download and Import the latest <code>backup.json</code> before making new changes '
+      + 'on a machine you haven\'t used in a while, so you don\'t lose an edit.</div>'
+
+      + '<div class="modal-actions"><span></span><div class="modal-actions-right">'
+      + '<button type="button" class="btn-primary" id="mAboutClose">Close</button>'
+      + '</div></div>',
+      true
+    );
+    document.getElementById('mAboutClose').addEventListener('click', closeModal);
+  }
+  document.getElementById('aboutBtn').addEventListener('click', aboutModal);
 
   // ---------- sidebar resize / collapse ----------
   var rail = document.getElementById('rail');
