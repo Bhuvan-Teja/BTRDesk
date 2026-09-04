@@ -420,9 +420,14 @@ input,select,textarea{ font-family:inherit; color:inherit; }
 .note-meta{ display:flex; align-items:center; gap:7px; margin-top:5px; font-size:.78rem; color:var(--text-muted); flex-wrap:wrap; }
 .note-meta .dot{ width:7px; height:7px; border-radius:50%; }
 .note-meta .sep{ color:var(--text-faint); }
-.points{ margin:12px 0 0; padding-left:0; display:flex; flex-direction:column; gap:5px; }
-.points li{ font-size:.85rem; line-height:1.5; padding-left:15px; position:relative; color:var(--text); }
-.points li::before{ content:"–"; position:absolute; left:0; color:var(--text-faint); }
+.points{ margin:12px 0 0; font-size:.85rem; line-height:1.6; color:var(--text); }
+.points ul, .points ol{ margin:2px 0 6px 20px; padding:0; }
+.points ul{ list-style:disc; }
+.points ol{ list-style:decimal; }
+.points li{ margin-bottom:3px; }
+.points p, .points div{ margin:0 0 6px; }
+.points p:last-child, .points div:last-child{ margin-bottom:0; }
+.points b, .points strong{ font-weight:700; }
 .actions{ margin-top:13px; padding-top:12px; border-top:1px dashed var(--border-soft); }
 .actions-label{ font-size:.68rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text-faint); margin-bottom:7px; }
 .action-items li{ display:flex; align-items:center; gap:9px; padding:4px 0; font-size:.85rem; }
@@ -461,6 +466,27 @@ input,select,textarea{ font-family:inherit; color:inherit; }
   font-size:.88rem; padding:8px 10px; border-radius:8px; width:100%; resize:vertical;
 }
 .field textarea{ min-height:64px; font-family:inherit; line-height:1.5; }
+
+/* Tiny rich-text editor: a 3-button toolbar (Bold / bullet / numbered
+   list) above a contenteditable div styled to match the textareas above it. */
+.rich-toolbar{ display:flex; gap:4px; margin-bottom:6px; }
+.rich-toolbar button{
+  border:1px solid var(--border); background:var(--surface-2); color:var(--text-muted);
+  font-size:.72rem; font-weight:600; padding:4px 9px; border-radius:6px; cursor:pointer; line-height:1.3;
+}
+.rich-toolbar button:hover{ border-color:var(--accent); color:var(--accent); }
+.rich-input{
+  border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+  font-size:.88rem; line-height:1.5; padding:8px 10px; border-radius:8px;
+  min-height:64px; font-family:inherit; overflow-wrap:anywhere;
+}
+.rich-input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+.rich-input.is-empty:before{ content:attr(data-placeholder); color:var(--text-faint); }
+.rich-input ul, .rich-input ol{ margin:2px 0 2px 20px; padding:0; }
+.rich-input ul{ list-style:disc; }
+.rich-input ol{ list-style:decimal; }
+.rich-input li{ margin-bottom:2px; }
+.rich-input b, .rich-input strong{ font-weight:700; }
 .field-row{ display:flex; gap:10px; }
 .field-row .field{ flex:1; }
 .field-inline-action{ display:flex; align-items:center; gap:10px; margin-top:8px; flex-wrap:wrap; }

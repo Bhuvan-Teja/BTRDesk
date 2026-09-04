@@ -82,10 +82,9 @@
       notes: [
         {
           id: 'n1', title: 'Example meeting note — delete me', date: today, projectId: 'p1', attendees: '—',
-          points: [
-            'Use the + button (bottom right) → Note to capture attendees, key points and action items.',
-            'Action items below can be converted straight into a task.'
-          ],
+          pointsHtml: '<ul><li>Use the + button (bottom right) → Note to capture attendees, key points and action items.</li>'
+            + '<li>Select text in Key points to try <b>Bold</b>, or a bullet/numbered list from the toolbar above it.</li>'
+            + '<li>Action items below can be converted straight into a task.</li></ul>',
           actions: [{ text: 'Try converting this into a task', done: false, converted: false }]
         }
       ]
@@ -107,6 +106,17 @@
       if (t.actualSeconds === undefined) t.actualSeconds = null;
       if (t.startTime === undefined) t.startTime = null;
       if (t.taskNotes === undefined) t.taskNotes = '';
+    });
+    // Key points moved from an array of plain-text lines to a single rich-
+    // text HTML blob (so Bold/bullet/numbered formatting has somewhere to
+    // live) — fold any pre-existing plain lines into an equivalent list.
+    (s.notes || []).forEach(function (n) {
+      if (n.pointsHtml === undefined) {
+        n.pointsHtml = (Array.isArray(n.points) && n.points.length)
+          ? '<ul>' + n.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>'
+          : '';
+      }
+      delete n.points;
     });
     // guard against a stale focusTaskId pointing at a missing/completed task
     if (s.focusTaskId) {
@@ -145,6 +155,71 @@
   function matches(text) {
     if (!filter.query) return true;
     return String(text).toLowerCase().indexOf(filter.query) !== -1;
+  }
+
+  // ---------- tiny rich-text editor (Bold / bullet / numbered list) ----------
+  // Used for the two prose-style fields — a task's own notes, and a
+  // meeting note's key points — not the list-of-discrete-items fields
+  // (action items) where each line is its own interactive checkbox row.
+  var RICH_ALLOWED_TAGS = { B: 1, STRONG: 1, I: 1, EM: 1, U: 1, UL: 1, OL: 1, LI: 1, BR: 1, DIV: 1, P: 1, SPAN: 1 };
+  function sanitizeRichHtml(html) {
+    var root = document.createElement('div');
+    root.innerHTML = html || '';
+    (function clean(node) {
+      Array.from(node.childNodes).forEach(function (child) {
+        if (child.nodeType === 1) {
+          clean(child); // sanitize descendants before deciding this tag's own fate
+          if (RICH_ALLOWED_TAGS[child.tagName]) {
+            Array.from(child.attributes).forEach(function (a) { child.removeAttribute(a.name); });
+          } else {
+            // Not a formatting tag we support — drop the tag but keep its
+            // (already-cleaned) contents rather than losing the text.
+            while (child.firstChild) node.insertBefore(child.firstChild, child);
+            node.removeChild(child);
+          }
+        } else if (child.nodeType !== 3) {
+          node.removeChild(child); // comments etc.
+        }
+      });
+    })(root);
+    return root.innerHTML;
+  }
+  function stripHtml(html) {
+    var d = document.createElement('div');
+    d.innerHTML = html || '';
+    return d.textContent || '';
+  }
+  function richEditorHtml(id, valueHtml, placeholder) {
+    return '<div class="rich-toolbar" data-for="' + id + '">'
+      + '<button type="button" data-cmd="bold" title="Bold"><b>B</b></button>'
+      + '<button type="button" data-cmd="insertUnorderedList" title="Bulleted list">≣ •</button>'
+      + '<button type="button" data-cmd="insertOrderedList" title="Numbered list">≣ 1.</button>'
+      + '</div>'
+      + '<div class="rich-input" id="' + id + '" contenteditable="true" data-placeholder="' + esc(placeholder) + '">' + (valueHtml || '') + '</div>';
+  }
+  // Buttons act on the current selection in the editor, so the mousedown has
+  // to be prevented (not the click) — otherwise focus jumps to the button
+  // first and the text selection is already gone by the time execCommand runs.
+  function wireRichToolbar(toolbarEl) {
+    toolbarEl.addEventListener('mousedown', function (e) {
+      var btn = e.target.closest('button[data-cmd]');
+      if (!btn) return;
+      e.preventDefault();
+      document.execCommand(btn.dataset.cmd, false, null);
+    });
+  }
+  function updateRichEmptyState(el) {
+    el.classList.toggle('is-empty', !el.textContent.trim());
+  }
+  function initRichEditor(id) {
+    var toolbar = document.querySelector('.rich-toolbar[data-for="' + id + '"]');
+    var input = document.getElementById(id);
+    wireRichToolbar(toolbar);
+    updateRichEmptyState(input);
+    input.addEventListener('input', function () { updateRichEmptyState(input); });
+  }
+  function richValue(id) {
+    return sanitizeRichHtml(document.getElementById(id).innerHTML);
   }
   function fmtDate(iso) {
     if (!iso) return '';
@@ -300,7 +375,7 @@
 
   function noteCardHtml(n) {
     var p = projectById(n.projectId);
-    var pointsHtml = n.points.length ? '<ul class="points">' + n.points.map(function (pt) { return '<li>' + esc(pt) + '</li>'; }).join('') + '</ul>' : '';
+    var pointsHtml = n.pointsHtml ? '<div class="points">' + n.pointsHtml + '</div>' : '';
     var actionsHtml = '';
     if (n.actions.length) {
       actionsHtml = '<div class="actions"><div class="actions-label">Action items</div><ul class="action-items">'
@@ -328,7 +403,7 @@
   function filteredNotes() {
     return state.notes.filter(function (n) {
       if (filter.project !== 'all' && n.projectId !== filter.project) return false;
-      var hay = n.title + ' ' + n.points.join(' ') + ' ' + n.actions.map(function (a) { return a.text; }).join(' ');
+      var hay = n.title + ' ' + stripHtml(n.pointsHtml) + ' ' + n.actions.map(function (a) { return a.text; }).join(' ');
       return matches(hay);
     }).sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); });
   }
@@ -975,13 +1050,13 @@
   overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
   // Enter saves the open modal, same as clicking Save — except inside a
-  // textarea (Enter has to keep inserting newlines there) or while focus is
-  // on a button (a focused Cancel/Delete already handles its own Enter;
-  // firing Save too would be wrong).
+  // textarea or rich-text editor (Enter has to keep inserting newlines/list
+  // items there) or while focus is on a button (a focused Cancel/Delete
+  // already handles its own Enter; firing Save too would be wrong).
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' || !overlay.classList.contains('open')) return;
     var tag = e.target.tagName;
-    if (tag === 'TEXTAREA' || tag === 'BUTTON') return;
+    if (tag === 'TEXTAREA' || tag === 'BUTTON' || e.target.isContentEditable) return;
     var saveBtn = document.getElementById('mSave');
     if (saveBtn) { e.preventDefault(); saveBtn.click(); }
   });
@@ -1047,7 +1122,7 @@
       + '<div class="field"><label>Date</label><input type="date" id="mTaskDate" value="' + t.date + '"></div>'
       + '<div class="field"><label>Time (optional)</label><input type="time" id="mTaskStartTime" value="' + (t.startTime || '') + '"></div>'
       + '</div>'
-      + '<div class="field"><label>Notes for this task</label><textarea id="mTaskNotes" placeholder="What to do for this task…">' + esc(t.taskNotes || '') + '</textarea>'
+      + '<div class="field"><label>Notes for this task</label>' + richEditorHtml('mTaskNotes', t.taskNotes || '', 'What to do for this task…')
       + (existing
         ? '<div class="field-inline-action"><button type="button" class="btn-secondary" id="mPersistNote">Persist</button>'
           + '<span class="field-hint">Moves this into the Notes section, titled with this task — and clears it from here.</span></div>'
@@ -1059,6 +1134,7 @@
       + '</div>'
     );
     renderProjectSelect(document.getElementById('mTaskProject'), t.projectId);
+    initRichEditor('mTaskNotes');
     document.getElementById('mTaskTitle').focus();
     document.getElementById('mCancel').addEventListener('click', closeModal);
     document.getElementById('mSave').addEventListener('click', function () {
@@ -1069,7 +1145,7 @@
       var time = parseFloat(document.getElementById('mTaskTime').value) || 1;
       var date = document.getElementById('mTaskDate').value || todayISO();
       var startTime = document.getElementById('mTaskStartTime').value || null;
-      var taskNotes = document.getElementById('mTaskNotes').value;
+      var taskNotes = richValue('mTaskNotes');
       if (existing) {
         existing.title = title; existing.projectId = projectId; existing.priority = priority;
         existing.time = time; existing.date = date; existing.startTime = startTime; existing.taskNotes = taskNotes;
@@ -1080,15 +1156,14 @@
     });
     if (existing) {
       document.getElementById('mPersistNote').addEventListener('click', function () {
-        var noteText = document.getElementById('mTaskNotes').value.trim();
-        if (!noteText) return;
-        var points = noteText.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
-        state.notes.unshift({ id: nextId('n'), title: existing.title, date: existing.date, projectId: existing.projectId, attendees: '', points: points, actions: [] });
+        var notesEl = document.getElementById('mTaskNotes');
+        if (!notesEl.textContent.trim()) return;
+        var pointsHtml = richValue('mTaskNotes');
+        state.notes.unshift({ id: nextId('n'), title: existing.title, date: existing.date, projectId: existing.projectId, attendees: '', pointsHtml: pointsHtml, actions: [] });
         existing.taskNotes = '';
         save(); renderAll();
         var btn = document.getElementById('mPersistNote');
-        var textarea = document.getElementById('mTaskNotes');
-        if (textarea) textarea.value = '';
+        if (notesEl) { notesEl.innerHTML = ''; updateRichEmptyState(notesEl); }
         if (btn) {
           btn.textContent = 'Saved to Notes ✓'; btn.disabled = true;
           setTimeout(function () { if (btn.isConnected) { btn.textContent = 'Persist'; btn.disabled = false; } }, 1500);
@@ -1103,7 +1178,7 @@
   }
 
   function noteModal(existing) {
-    var n = existing || { title: '', date: todayISO(), projectId: contextualProjectId(), attendees: '', points: [], actions: [] };
+    var n = existing || { title: '', date: todayISO(), projectId: contextualProjectId(), attendees: '', pointsHtml: '', actions: [] };
     openModal(
       '<h2>' + (existing ? 'Edit note' : 'New meeting note') + '</h2>'
       + '<div class="field"><label>Title</label><input type="text" id="mNoteTitle" value="' + esc(n.title) + '" placeholder="e.g. Kickoff — Meridian Retail RFP"></div>'
@@ -1112,7 +1187,7 @@
       + '<div class="field"><label>Date</label><input type="date" id="mNoteDate" value="' + n.date + '"></div>'
       + '</div>'
       + '<div class="field"><label>Attendees</label><input type="text" id="mNoteAttendees" value="' + esc(n.attendees) + '" placeholder="Comma-separated"></div>'
-      + '<div class="field"><label>Key points (one per line)</label><textarea id="mNotePoints">' + esc(n.points.join('\n')) + '</textarea></div>'
+      + '<div class="field"><label>Key points</label>' + richEditorHtml('mNotePoints', n.pointsHtml || '', 'Key points from the meeting…') + '</div>'
       + '<div class="field"><label>Action items (one per line)</label><textarea id="mNoteActions">' + esc(n.actions.map(function (a) { return a.text; }).join('\n')) + '</textarea></div>'
       + '<div class="modal-actions">'
       + (existing ? '<button type="button" class="btn-danger-text" id="mDelete">Delete note</button>' : '<span></span>')
@@ -1120,6 +1195,7 @@
       + '</div>'
     );
     renderProjectSelect(document.getElementById('mNoteProject'), n.projectId);
+    initRichEditor('mNotePoints');
     document.getElementById('mNoteTitle').focus();
     document.getElementById('mCancel').addEventListener('click', closeModal);
     document.getElementById('mSave').addEventListener('click', function () {
@@ -1128,7 +1204,7 @@
       var projectId = document.getElementById('mNoteProject').value;
       var date = document.getElementById('mNoteDate').value || todayISO();
       var attendees = document.getElementById('mNoteAttendees').value.trim();
-      var points = document.getElementById('mNotePoints').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+      var pointsHtml = richValue('mNotePoints');
       var newActionTexts = document.getElementById('mNoteActions').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
       var oldActions = existing ? existing.actions : [];
       var actions = newActionTexts.map(function (text) {
@@ -1137,9 +1213,9 @@
       });
       if (existing) {
         existing.title = title; existing.projectId = projectId; existing.date = date;
-        existing.attendees = attendees; existing.points = points; existing.actions = actions;
+        existing.attendees = attendees; existing.pointsHtml = pointsHtml; existing.actions = actions;
       } else {
-        state.notes.unshift({ id: nextId('n'), title: title, date: date, projectId: projectId, attendees: attendees, points: points, actions: actions });
+        state.notes.unshift({ id: nextId('n'), title: title, date: date, projectId: projectId, attendees: attendees, pointsHtml: pointsHtml, actions: actions });
       }
       save(); renderAll(); closeModal();
     });

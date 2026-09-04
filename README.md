@@ -104,9 +104,16 @@ machine or recovering from a wiped browser profile.
   something written. It's saved with the task and normally private to it:
   delete the task and whatever's in there goes with it, nothing left behind.
   **Persist** turns it into a real entry in the Notes section (titled with
-  the task, tagged to the same project, one bullet per line) and clears it
-  from the task — from then on it's an independent note, unaffected by
-  whatever happens to the task afterward.
+  the task, tagged to the same project) and clears it from the task — from
+  then on it's an independent note, unaffected by whatever happens to the
+  task afterward.
+- **Basic formatting** — this field and a note's **Key points** both have a
+  small toolbar above them: **B** (bold), a bulleted list, and a numbered
+  list. Select some text first for Bold; the list buttons work like a word
+  processor's — turn the current line(s) into a list, or keep typing inside
+  one to add more items. (Action items stay plain text, one per line, since
+  each line is already its own checkbox row — formatting inside them isn't
+  meaningful the same way.)
 - **Projects** (left sidebar) — click `+` to add one, and ✎ (on hover) to
   rename/recolor/delete. **Click a row (including "All projects") to open it**:
   every open task and note tagged to it, with a **Tasks / Notes** toggle at the
