@@ -76,6 +76,10 @@
           <h1>Today</h1>
           <div class="sub" id="todayDate"></div>
         </div>
+        <div class="seg-control" id="taskScopeControl">
+          <button type="button" data-task-scope="today">Today only</button>
+          <button type="button" data-task-scope="all" class="active">Today + Upcoming</button>
+        </div>
         <div class="capacity">
           <div class="capacity-bar"><div class="capacity-fill" id="capacityFill"></div></div>
           <span class="capacity-label"><span id="plannedHours">–</span>h of <span id="capacityLabelTotal">8.0</span>h planned</span>
@@ -83,13 +87,15 @@
       </div>
       <ul class="tasks" id="taskList"></ul>
 
-      <div class="view-head view-head-secondary">
-        <div>
-          <h1>Upcoming</h1>
-          <div class="sub">Tasks scheduled for later, grouped by date</div>
+      <div id="upcomingSection">
+        <div class="view-head view-head-secondary">
+          <div>
+            <h1>Upcoming</h1>
+            <div class="sub">Tasks scheduled for later, grouped by date</div>
+          </div>
         </div>
+        <div id="upcomingList"></div>
       </div>
-      <div id="upcomingList"></div>
     </section>
 
     <section class="view" id="view-analysis">

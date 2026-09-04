@@ -9,6 +9,14 @@
   // before this set was validated for CVD-safe pairwise contrast — see README).
   var LEGACY_COLORS = ['#1F5D50', '#B5502D', '#C9A227', '#3D5A80', '#6B4E71', '#6E7B3D'];
   var PRIORITY_ORDER = { high: 0, med: 1, low: 2 };
+  // Within a day, a task with a scheduled Time sorts by that clock time
+  // (00:00 -> 23:59); a task with no Time set has no slot on the clock, so
+  // it falls after every timed task for that day, with priority breaking
+  // ties either way — same tiebreak rule used everywhere before this.
+  function compareByTimeThenPriority(a, b) {
+    var ta = a.startTime || '24:00', tb = b.startTime || '24:00';
+    return (ta < tb ? -1 : ta > tb ? 1 : 0) || (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
+  }
 
   // Every touch of localStorage goes through these two — some browsers
   // (locked-down corporate profiles especially) throw the moment
@@ -234,7 +242,22 @@
     document.getElementById('completedBucketBtn').classList.toggle('active', filter.view === 'completed');
   }
 
+  // "Today only" vs "Today + Upcoming" — just hides/shows the Upcoming
+  // section below Today's list; doesn't change what counts as "today"
+  // (a still-undone task from an earlier date stays visible as Overdue).
+  var TASK_SCOPE_KEY = 'btrdesk-task-scope';
+  var taskScope = safeGet(TASK_SCOPE_KEY, 'all');
+  if (['today', 'all'].indexOf(taskScope) === -1) taskScope = 'all';
+
+  function applyTaskScope() {
+    document.querySelectorAll('#taskScopeControl button').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.taskScope === taskScope);
+    });
+    document.getElementById('upcomingSection').hidden = taskScope === 'today';
+  }
+
   function renderTasks() {
+    applyTaskScope();
     var today = todayISO();
     // Completed tasks live in the Completed bucket now, not inline here.
     var list = state.tasks.filter(function (t) {
@@ -242,9 +265,7 @@
       if (filter.project !== 'all' && t.projectId !== filter.project) return false;
       if (!matches(t.title)) return false;
       return t.date <= today;
-    }).sort(function (a, b) {
-      return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
-    });
+    }).sort(compareByTimeThenPriority);
 
     var el = document.getElementById('taskList');
     el.innerHTML = list.length === 0
@@ -268,7 +289,7 @@
       if (!matches(t.title)) return false;
       return !t.done && t.date > today;
     }).sort(function (a, b) {
-      return a.date.localeCompare(b.date) || (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
+      return a.date.localeCompare(b.date) || compareByTimeThenPriority(a, b);
     });
 
     var el = document.getElementById('upcomingList');
@@ -473,7 +494,7 @@
         if (filter.project !== 'all' && t.projectId !== filter.project) return false;
         return matches(t.title);
       }).sort(function (a, b) {
-        return a.date.localeCompare(b.date) || (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
+        return a.date.localeCompare(b.date) || compareByTimeThenPriority(a, b);
       });
 
       tasksWrap.innerHTML = list.length
@@ -489,7 +510,7 @@
   function renderCompletedView() {
     if (!document.getElementById('view-completed').classList.contains('active')) return;
     var list = state.tasks.filter(function (t) { return t.done && matches(t.title); })
-      .sort(function (a, b) { return b.date.localeCompare(a.date) || (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]); });
+      .sort(function (a, b) { return b.date.localeCompare(a.date) || compareByTimeThenPriority(a, b); });
     document.getElementById('completedList').innerHTML = list.length
       ? dateGroupsHtml(groupTasksByDate(list))
       : '<div class="empty">Nothing completed yet — checked-off tasks land here.</div>';
@@ -517,7 +538,7 @@
   function isoOf(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
   function openTasksForDate(dateISO) {
     return state.tasks.filter(function (t) { return !t.done && t.date === dateISO && matches(t.title); })
-      .sort(function (a, b) { return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]; });
+      .sort(compareByTimeThenPriority);
   }
   function calChipsHtml(items) {
     return items.map(function (t) {
@@ -582,7 +603,7 @@
     document.getElementById('calendarLabel').textContent = cursor.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
     var items = state.tasks.filter(function (t) { return t.date === dateISO && matches(t.title); })
-      .sort(function (a, b) { return (a.done - b.done) || (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]); });
+      .sort(function (a, b) { return (a.done - b.done) || compareByTimeThenPriority(a, b); });
     var todayStr = todayISO();
     var body = items.length
       ? '<ul class="tasks">' + items.map(function (t) { return taskRowHtml(t, { draggable: false }); }).join('') + '</ul>'
@@ -1328,6 +1349,13 @@
   document.getElementById('upcomingList').addEventListener('click', onDateToggleClick(renderUpcoming));
   document.getElementById('upcomingList').addEventListener('click', onTaskListClick);
   wireDateDragDrop(document.getElementById('upcomingList'));
+
+  document.getElementById('taskScopeControl').addEventListener('click', function (e) {
+    var btn = e.target.closest('button'); if (!btn) return;
+    taskScope = btn.dataset.taskScope;
+    safeSet(TASK_SCOPE_KEY, taskScope);
+    applyTaskScope();
+  });
 
   function onNoteListClick(e) {
     var editBtn = e.target.closest('[data-action="edit-note"]');

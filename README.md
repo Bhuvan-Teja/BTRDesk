@@ -61,6 +61,11 @@ machine or recovering from a wiped browser profile.
   quietly disappearing — and **Upcoming** below it, everything scheduled for
   a future date, grouped by date. Give a task a future date (quick-capture or
   its edit modal) and it moves down into Upcoming instead of cluttering today.
+  **Today only / Today + Upcoming**, next to the capacity bar, hides or shows
+  the Upcoming section — Today's own list (and every other list — Upcoming,
+  a project's page, Calendar) is always ordered by a task's **Time**
+  (earliest first, midnight to 11:59 PM), with untimed tasks falling after
+  the timed ones.
 - **Notes** — meeting notes: title, attendees, key points, action items. Any
   action item has a **"→ Today"** button that turns it into a task in one click.
 - **Top bar** — Tasks, Notes, Calendar and Analysis all sit in one group at
