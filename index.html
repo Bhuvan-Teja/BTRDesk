@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTR's Desk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <button type="button" class="sidebar-reopen" id="sidebarReopenBtn" hidden aria-label="Show sidebar">» Projects</button>
+  <div class="brand">BTR's Desk</div>
+  <div class="topbar-right">
+    <button type="button" class="topbar-analysis active" data-view="tasks">Tasks</button>
+    <button type="button" class="topbar-analysis" data-view="notes">Notes</button>
+    <button type="button" class="topbar-analysis" data-view="calendar">Calendar</button>
+    <button type="button" class="topbar-analysis" data-view="analysis">Analysis</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="rail" id="rail">
+    <div class="rail-head">
+      <button type="button" class="rail-collapse" id="sidebarCollapseBtn" aria-label="Hide sidebar">« Hide</button>
+    </div>
+    <div>
+      <div class="rail-label-row">
+        <div class="rail-label">Projects</div>
+        <button type="button" class="rail-add" id="addProjectBtn" aria-label="Add project">+</button>
+      </div>
+      <ul class="projects" id="projectList"></ul>
+    </div>
+    <button type="button" class="completed-bucket" id="completedBucketBtn">
+      <span class="completed-icon">✓</span>
+      <span class="name">Completed</span>
+      <span class="count" id="completedCount">0</span>
+    </button>
+    <div class="rail-foot">
+      <div>Capacity resets daily at <b id="capacitySetting">8.0</b>h.</div>
+      <div class="rail-foot-actions">
+        <button type="button" id="notifyBtn" hidden>Enable alerts</button>
+        <span class="sep" id="notifySep" hidden>·</span>
+        <button type="button" id="exportBtn">Export backup</button>
+        <span class="sep">·</span>
+        <button type="button" id="importBtn">Import</button>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+    </div>
+    <div class="rail-resize" id="railResize" aria-hidden="true"></div>
+  </aside>
+
+  <main class="main">
+    <div class="main-search">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="Search notes &amp; tasks…">
+      </label>
+    </div>
+
+    <div class="focus-banner" id="focusBanner" hidden>
+      <span class="focus-dot"></span>
+      <span class="focus-label">Focusing on</span>
+      <span class="focus-title" id="focusTitle"></span>
+      <span class="focus-elapsed" id="focusElapsed">00:00</span>
+      <button type="button" class="btn-ghost" id="focusCancelBtn">Cancel</button>
+      <button type="button" class="btn-primary" id="focusCompleteBtn">Complete</button>
+    </div>
+
+    <section class="view active" id="view-tasks">
+      <div class="view-head">
+        <div>
+          <h1>Today</h1>
+          <div class="sub" id="todayDate"></div>
+        </div>
+        <div class="capacity">
+          <div class="capacity-bar"><div class="capacity-fill" id="capacityFill"></div></div>
+          <span class="capacity-label"><span id="plannedHours">–</span>h of <span id="capacityLabelTotal">8.0</span>h planned</span>
+        </div>
+      </div>
+      <ul class="tasks" id="taskList"></ul>
+
+      <div class="view-head view-head-secondary">
+        <div>
+          <h1>Upcoming</h1>
+          <div class="sub">Tasks scheduled for later, grouped by date</div>
+        </div>
+      </div>
+      <div id="upcomingList"></div>
+    </section>
+
+    <section class="view" id="view-analysis">
+      <div class="view-head">
+        <div>
+          <h1>Analysis</h1>
+          <div class="sub">Time spent in focus sessions, from completed tasks</div>
+        </div>
+      </div>
+
+      <div class="analysis-filters">
+        <span class="analysis-filters-label">View by</span>
+        <div class="seg-control" id="granularityControl">
+          <button type="button" data-granularity="day" class="active">Day</button>
+          <button type="button" data-granularity="month">Month</button>
+          <button type="button" data-granularity="year">Year</button>
+        </div>
+        <span class="analysis-range" id="analysisRange"></span>
+      </div>
+
+      <div class="analysis-grid">
+        <div class="analysis-card">
+          <div class="analysis-card-head">
+            <h2>Today by project</h2>
+            <span class="sub" id="donutDateLabel"></span>
+          </div>
+          <div class="donut-wrap" id="donutWrap"></div>
+        </div>
+
+        <div class="analysis-card analysis-card-wide">
+          <div class="analysis-card-head">
+            <h2>Trend</h2>
+            <span class="stat-inline"><span id="trendTotal">0h</span> tracked this period</span>
+          </div>
+          <div class="trend-wrap" id="trendWrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-notes">
+      <div class="view-head">
+        <div>
+          <h1>Notes</h1>
+          <div class="sub">Meeting notes &amp; quick captures, newest first</div>
+        </div>
+      </div>
+      <div class="notes" id="noteList"></div>
+    </section>
+
+    <section class="view" id="view-project">
+      <div class="view-head">
+        <div>
+          <h1 id="projectViewTitle">All projects</h1>
+          <div class="sub">Every task and note tagged to it</div>
+        </div>
+        <div class="seg-control" id="projectViewToggle">
+          <button type="button" data-mode="tasks" class="active">Tasks</button>
+          <button type="button" data-mode="notes">Notes</button>
+        </div>
+      </div>
+      <div id="projectTasksWrap"></div>
+      <div class="notes" id="projectNotesWrap" hidden></div>
+    </section>
+
+    <section class="view" id="view-completed">
+      <div class="view-head">
+        <div>
+          <h1>Completed</h1>
+          <div class="sub">Everything you've checked off, across every project</div>
+        </div>
+        <button type="button" class="btn-danger-outline" id="clearCompletedBtn">Clear bucket</button>
+      </div>
+      <div id="completedList"></div>
+    </section>
+
+    <section class="view" id="view-calendar">
+      <div class="view-head">
+        <div>
+          <h1>Calendar</h1>
+          <div class="sub">Open tasks by date — drag a task onto another day to reschedule it</div>
+        </div>
+        <div class="seg-control" id="calendarModeControl">
+          <button type="button" data-cal-mode="month" class="active">Month</button>
+          <button type="button" data-cal-mode="week">Week</button>
+          <button type="button" data-cal-mode="day">Day</button>
+        </div>
+      </div>
+      <div class="cal-nav">
+        <button type="button" class="icon-btn" id="calPrevBtn" aria-label="Previous">‹</button>
+        <span id="calendarLabel">Month Year</span>
+        <button type="button" class="icon-btn" id="calNextBtn" aria-label="Next">›</button>
+        <button type="button" class="btn-secondary" id="calTodayBtn">Today</button>
+      </div>
+      <div class="cal-weekdays" id="calendarWeekdays">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      <div class="cal-grid" id="calendarGrid"></div>
+    </section>
+  </main>
+</div>
+
+<div class="fab-wrap" id="fabWrap">
+  <div class="fab-options">
+    <button type="button" class="fab-option" id="fabNoteBtn"><span class="glyph">✎</span>Note</button>
+    <button type="button" class="fab-option" id="fabTaskBtn"><span class="glyph">✓</span>Task</button>
+  </div>
+  <button type="button" class="fab-main" id="fabMainBtn" aria-haspopup="true" aria-label="Add task or note">+</button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
