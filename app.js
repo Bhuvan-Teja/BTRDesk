@@ -953,6 +953,17 @@
 
   overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+  // Enter saves the open modal, same as clicking Save — except inside a
+  // textarea (Enter has to keep inserting newlines there) or while focus is
+  // on a button (a focused Cancel/Delete already handles its own Enter;
+  // firing Save too would be wrong).
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !overlay.classList.contains('open')) return;
+    var tag = e.target.tagName;
+    if (tag === 'TEXTAREA' || tag === 'BUTTON') return;
+    var saveBtn = document.getElementById('mSave');
+    if (saveBtn) { e.preventDefault(); saveBtn.click(); }
+  });
 
   function projectModal(existing) {
     var isEdit = !!existing;
