@@ -387,10 +387,9 @@
         }).join('')
         + '</ul></div>';
     }
-    return '<article class="note" data-id="' + n.id + '">'
+    return '<article class="note" data-id="' + n.id + '" title="Click to edit">'
       + '<header><h3>' + esc(n.title) + '</h3>'
       + '<span class="note-head-right"><time>' + fmtDate(n.date) + '</time>'
-      + '<button type="button" class="icon-btn" data-action="edit-note" data-id="' + n.id + '" aria-label="Edit note">✎</button>'
       + '<button type="button" class="icon-btn danger" data-action="delete-note" data-id="' + n.id + '" aria-label="Delete note">✕</button>'
       + '</span></header>'
       + '<div class="note-meta"><span class="dot" style="background:' + p.color + '"></span>' + esc(p.name)
@@ -1434,8 +1433,6 @@
   });
 
   function onNoteListClick(e) {
-    var editBtn = e.target.closest('[data-action="edit-note"]');
-    if (editBtn) { noteModal(state.notes.find(function (x) { return x.id === editBtn.dataset.id; })); return; }
     var delBtn = e.target.closest('[data-action="delete-note"]');
     if (delBtn) {
       if (confirm('Delete this note?')) {
@@ -1455,6 +1452,13 @@
       save(); renderAll();
       return;
     }
+    // A click on the action-item checkbox (or its label) is handled by the
+    // 'change' listener below — don't also open the edit modal underneath it.
+    if (e.target.closest('[data-action="toggle-action"]')) return;
+    // Anything else on the card (title, meta, points, empty space…) opens it
+    // for editing — same "the whole row is the button" pattern as tasks.
+    var card = e.target.closest('.note[data-id]');
+    if (card) { noteModal(state.notes.find(function (x) { return x.id === card.dataset.id; })); }
   }
   function onNoteListChange(e) {
     var chk = e.target.closest('[data-action="toggle-action"]');

@@ -74,7 +74,9 @@ machine or recovering from a wiped browser profile.
   between them.
 - **Editing a task** — click anywhere on its row (title, project, badges — not
   the checkbox, ▶, or ✕). There's no separate edit icon anymore; the whole row
-  is the button.
+  is the button. **Editing a note** works the same way — click anywhere on the
+  card (title, points, the empty space) except the checkbox, **→ Today**, or
+  ✕, which keep their own separate meaning.
 - **Rescheduling by drag** — anywhere tasks are grouped by date (Upcoming, a
   project's page), grab a task and drop it on a different date's group to move
   it there — no handle needed, since a real drag and a plain click (which

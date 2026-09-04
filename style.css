@@ -402,8 +402,9 @@ input,select,textarea{ font-family:inherit; color:inherit; }
 .notes{ display:flex; flex-direction:column; gap:14px; }
 .note{
   background:var(--surface); border:1px solid var(--border); border-radius:12px;
-  padding:16px 18px; box-shadow:var(--shadow);
+  padding:16px 18px; box-shadow:var(--shadow); cursor:pointer;
 }
+.note:hover{ border-color:var(--accent); }
 .note header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .note h3{ font-size:.98rem; font-weight:700; }
 .note-head-right{ flex:none; display:flex; align-items:center; gap:8px; }
