@@ -30,11 +30,15 @@ you open it in. That means:
   own separate data, same as two different browsers would.
 - Clearing your browser's site data / history will erase it.
 
-Real sync across machines (so the same tasks and notes show up everywhere)
-would mean swapping local storage for a small always-on data store — a
-private GitHub Gist accessed via the GitHub API is the natural next step for
-this repo, since it stays free and doesn't need a real backend. Not built
-yet; ask for it if the export/import routine below gets old.
+**Moving data to another machine today:** see [sync/README.md](sync/README.md)
+— Export backup, hand the file to this repo, Import it on the other end. It's
+a manual round trip, but it needs nothing beyond a browser and this repo.
+
+Real automatic sync across machines (so the same tasks and notes just show up
+everywhere, no export/import step) would mean swapping local storage for a
+small always-on data store — a private GitHub Gist accessed via the GitHub
+API is the natural next step for this repo, since it stays free and doesn't
+need a real backend. Not built yet; ask for it if the manual routine gets old.
 
 Because of that last point: **use "Export backup" in the bottom-left corner every
 so often** (weekly is plenty). It downloads a `btrdesk-backup-*.json` file. "Import"
