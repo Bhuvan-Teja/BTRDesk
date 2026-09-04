@@ -1234,6 +1234,10 @@
   // ---------- view / filter wiring ----------
   function switchView(view) {
     filter.view = view;
+    // Tasks and Notes are top-level views, not a per-project drill-down —
+    // landing on either one (from the topbar, not from a project row) always
+    // shows everything, regardless of which project you were last looking at.
+    if (view === 'tasks' || view === 'notes') filter.project = 'all';
     document.querySelectorAll('[data-view]').forEach(function (b) { b.classList.toggle('active', b.dataset.view === view); });
     document.getElementById('view-tasks').classList.toggle('active', view === 'tasks');
     document.getElementById('view-notes').classList.toggle('active', view === 'notes');
@@ -1241,6 +1245,8 @@
     document.getElementById('view-project').classList.toggle('active', view === 'project');
     document.getElementById('view-completed').classList.toggle('active', view === 'completed');
     document.getElementById('view-calendar').classList.toggle('active', view === 'calendar');
+    if (view === 'tasks') { renderTasks(); renderUpcoming(); }
+    if (view === 'notes') renderNotes();
     if (view === 'analysis') renderAnalysis();
     if (view === 'project') renderProjectView();
     if (view === 'completed') renderCompletedView();
