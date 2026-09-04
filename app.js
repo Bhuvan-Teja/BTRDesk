@@ -10,6 +10,22 @@
   var LEGACY_COLORS = ['#1F5D50', '#B5502D', '#C9A227', '#3D5A80', '#6B4E71', '#6E7B3D'];
   var PRIORITY_ORDER = { high: 0, med: 1, low: 2 };
 
+  // Every touch of localStorage goes through these two — some browsers
+  // (locked-down corporate profiles especially) throw the moment
+  // localStorage is even read, not just when it's full or disabled. An
+  // unguarded call anywhere near the top of the file would throw during
+  // initial script execution and silently take every button below it with
+  // it, so nothing — task creation included — would ever respond. Falling
+  // back to an in-memory value keeps the app usable for that session; it
+  // just won't remember prefs (or data — see load/save) across reloads.
+  function safeGet(key, fallback) {
+    try { var v = localStorage.getItem(key); return v === null ? fallback : v; }
+    catch (e) { return fallback; }
+  }
+  function safeSet(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) { /* storage unavailable */ }
+  }
+
   function todayISO() { return new Date().toISOString().slice(0, 10); }
   function todayLabel() {
     var d = new Date();
@@ -94,13 +110,13 @@
 
   function load() {
     try {
-      var raw = localStorage.getItem(STORE_KEY);
+      var raw = safeGet(STORE_KEY, null);
       if (raw) return migrate(JSON.parse(raw));
     } catch (e) { /* ignore, fall through to seed */ }
     return seedState();
   }
   function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
+    try { safeSet(STORE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
   }
 
   var state = load();
@@ -432,7 +448,7 @@
 
   // ---------- project view (all tasks + notes for one project, or all) ----------
   var PROJECT_VIEW_MODE_KEY = 'btrdesk-project-view-mode';
-  var projectViewMode = localStorage.getItem(PROJECT_VIEW_MODE_KEY) || 'tasks';
+  var projectViewMode = safeGet(PROJECT_VIEW_MODE_KEY, 'tasks');
   if (['tasks', 'notes'].indexOf(projectViewMode) === -1) projectViewMode = 'tasks';
 
   function renderProjectView() {
@@ -481,7 +497,7 @@
 
   // ---------- calendar (open tasks by date; drag a chip onto another day) ----------
   var CAL_MODE_KEY = 'btrdesk-calendar-view-mode';
-  var calendarViewMode = localStorage.getItem(CAL_MODE_KEY) || 'month';
+  var calendarViewMode = safeGet(CAL_MODE_KEY, 'month');
   if (['month', 'week', 'day'].indexOf(calendarViewMode) === -1) calendarViewMode = 'month';
 
   // Each mode remembers its own position independently — flipping the month
@@ -591,7 +607,7 @@
     var mode = btn.dataset.calMode;
     if (mode === calendarViewMode) return;
     calendarViewMode = mode;
-    localStorage.setItem(CAL_MODE_KEY, calendarViewMode);
+    safeSet(CAL_MODE_KEY, calendarViewMode);
     renderCalendarView();
   });
 
@@ -666,7 +682,7 @@
   // ---------- analysis (time tracked, from completed focus sessions) ----------
   var ANALYSIS_GRAN_KEY = 'btrdesk-analysis-granularity';
   var MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  var analysisGranularity = localStorage.getItem(ANALYSIS_GRAN_KEY) || 'day';
+  var analysisGranularity = safeGet(ANALYSIS_GRAN_KEY, 'day');
   if (['day', 'month', 'year'].indexOf(analysisGranularity) === -1) analysisGranularity = 'day';
 
   function hoursOf(seconds) { return seconds / 3600; }
@@ -834,7 +850,7 @@
   document.getElementById('granularityControl').addEventListener('click', function (e) {
     var btn = e.target.closest('button'); if (!btn) return;
     analysisGranularity = btn.dataset.granularity;
-    localStorage.setItem(ANALYSIS_GRAN_KEY, analysisGranularity);
+    safeSet(ANALYSIS_GRAN_KEY, analysisGranularity);
     document.querySelectorAll('#granularityControl button').forEach(function (b) { b.classList.toggle('active', b === btn); });
     renderAnalysis();
   });
@@ -1227,7 +1243,7 @@
   document.getElementById('projectViewToggle').addEventListener('click', function (e) {
     var btn = e.target.closest('button'); if (!btn) return;
     projectViewMode = btn.dataset.mode;
-    localStorage.setItem(PROJECT_VIEW_MODE_KEY, projectViewMode);
+    safeSet(PROJECT_VIEW_MODE_KEY, projectViewMode);
     renderProjectView();
   });
 
@@ -1355,7 +1371,7 @@
         state = migrate(data);
         save(); renderAll();
       } catch (err) {
-        alert('That file does not look like a BTR's Desk backup.');
+        alert('That file does not look like a BTR\'s Desk backup.');
       }
     };
     reader.readAsText(file);
@@ -1369,16 +1385,16 @@
   var reopenBtn = document.getElementById('sidebarReopenBtn');
 
   (function initSidebar() {
-    var savedWidth = parseInt(localStorage.getItem(UI_WIDTH_KEY), 10);
+    var savedWidth = parseInt(safeGet(UI_WIDTH_KEY, ''), 10);
     if (savedWidth && savedWidth >= 180 && savedWidth <= 440) rail.style.width = savedWidth + 'px';
-    var collapsed = localStorage.getItem(UI_COLLAPSED_KEY) === '1';
+    var collapsed = safeGet(UI_COLLAPSED_KEY, '0') === '1';
     setSidebarCollapsed(collapsed);
   })();
 
   function setSidebarCollapsed(collapsed) {
     rail.classList.toggle('is-hidden', collapsed);
     reopenBtn.hidden = !collapsed;
-    localStorage.setItem(UI_COLLAPSED_KEY, collapsed ? '1' : '0');
+    safeSet(UI_COLLAPSED_KEY, collapsed ? '1' : '0');
   }
   collapseBtn.addEventListener('click', function () { setSidebarCollapsed(true); });
   reopenBtn.addEventListener('click', function () { setSidebarCollapsed(false); });
@@ -1400,7 +1416,7 @@
     resizing = false;
     rail.classList.remove('is-resizing');
     railResize.classList.remove('active');
-    localStorage.setItem(UI_WIDTH_KEY, Math.round(rail.getBoundingClientRect().width).toString());
+    safeSet(UI_WIDTH_KEY, Math.round(rail.getBoundingClientRect().width).toString());
   });
 
   // ---------- keyboard ----------
