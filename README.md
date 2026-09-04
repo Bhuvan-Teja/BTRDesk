@@ -40,6 +40,13 @@ small always-on data store — a private GitHub Gist accessed via the GitHub
 API is the natural next step for this repo, since it stays free and doesn't
 need a real backend. Not built yet; ask for it if the manual routine gets old.
 
+Going further than that — real accounts, multiple people, login from any
+device, no export/import at all — is a bigger step (a real backend, not just
+a synced file). The full plan for that, if it's ever wanted, is in
+[docs/multi-user-scaling-plan.md](docs/multi-user-scaling-plan.md): what's
+needed, the target architecture, and the implementation/testing/deployment/
+monitoring plans. Planning only — nothing in it is built.
+
 Because of that last point: **use "Export backup" in the bottom-left corner every
 so often** (weekly is plenty). It downloads a `btrdesk-backup-*.json` file. "Import"
 in the same corner restores from one of those files — useful for moving to a new
