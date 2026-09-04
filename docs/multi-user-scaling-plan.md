@@ -61,6 +61,23 @@ checkbox, not a project.
 
 ## 2. Target architecture
 
+In words, since diagram rendering support varies by viewer:
+
+- **GitHub Pages** keeps serving the static app files, unchanged.
+- The **browser** (any device) runs the same UI as today, but now backed by
+  two things instead of `localStorage` alone: a **local cache** (instant,
+  optimistic reads/writes, same feel as today) and a **pending-writes queue**
+  that holds edits made while offline until they can be flushed.
+- The UI signs the user in through **Firebase Authentication**
+  (email/password and/or Microsoft OAuth), which issues an ID token.
+- Every read/write — both the live ones and the queued/offline ones once
+  flushed — goes to **Firestore**, scoped to that user's own document tree
+  (`/users/{uid}/...`), with **Security Rules** enforcing on the server side
+  that a token for uid A can never touch uid B's data.
+- Firestore's `onSnapshot` listeners push changes back down to every device
+  signed into that account in real time, which is what makes multi-device
+  sync automatic instead of a manual export/import step.
+
 ```mermaid
 flowchart LR
     subgraph Device["Any device's browser"]
@@ -72,13 +89,16 @@ flowchart LR
     Pages["GitHub Pages<br/>(serves the static files, unchanged)"] -. serves .-> UI
     UI <-->|read/write immediately, optimistic UI| Local
     UI -->|queues when offline| Queue
-    Queue -->|flushes on reconnect| FS
+    Queue -->|flushes on reconnect| FS[("Firestore<br/>/users/uid/...")]
 
     UI -->|sign in| Auth["Firebase Authentication<br/>(email/password + Microsoft OAuth)"]
     Auth -->|ID token per request| FS
-    UI <-->|onSnapshot realtime listeners| FS[("Firestore<br/>/users/uid/...")]
-    FS -->|Security Rules: uid must match path| FS
+    UI <-->|onSnapshot realtime listeners| FS
 ```
+
+*(If the diagram above shows as plain text or an error instead of a chart,
+your viewer doesn't render Mermaid — the prose description above it and the
+data-model table below cover the same ground.)*
 
 ### Components
 | Piece | Role | Changes from today |
