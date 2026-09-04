@@ -34,7 +34,14 @@
     try { localStorage.setItem(key, value); } catch (e) { /* storage unavailable */ }
   }
 
-  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  // Local calendar date, not UTC — toISOString() reports the UTC date, which
+  // is still "yesterday" for part of every day in any timezone ahead of UTC
+  // (e.g. IST, UTC+5:30, until 5:30am local), so today's own tasks would
+  // wrongly file under Upcoming until the UTC day caught up.
+  function todayISO() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
   function todayLabel() {
     var d = new Date();
     return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
@@ -1596,6 +1603,24 @@
       }
     }
   });
+
+  // ---------- day rollover ----------
+  // A tab left open across midnight shouldn't need a manual reload to
+  // notice: check the local date periodically, and immediately whenever the
+  // tab regains focus/visibility (an interval alone can be throttled for
+  // minutes on end while a tab is backgrounded — but that's fine, since
+  // nothing's showing anyone a stale "Today" until they actually look).
+  var lastKnownDate = todayISO();
+  function checkDateRollover() {
+    var now = todayISO();
+    if (now === lastKnownDate) return;
+    lastKnownDate = now;
+    document.getElementById('todayDate').textContent = todayLabel();
+    renderAll();
+  }
+  setInterval(checkDateRollover, 60 * 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) checkDateRollover(); });
+  window.addEventListener('focus', checkDateRollover);
 
   // ---------- init ----------
   document.getElementById('todayDate').textContent = todayLabel();
