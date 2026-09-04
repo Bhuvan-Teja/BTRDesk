@@ -5,19 +5,36 @@ multiple projects, and capturing the important points from a meeting before they
 
 ## Running it
 
-No install, no server. Just open [index.html](index.html) in your browser
-(double-click it, or right-click → Open with → your browser).
+**Hosted (works from any machine):** https://bhuvan-teja.github.io/BTRDesk/ —
+bookmark it, that's your daily entry point from now on. It's served straight
+from this repo's `main` branch, so a push here updates it for every machine
+you open that link from.
 
-Bookmark the page once it's open — that's your daily entry point.
+**Local, no install:** open [index.html](index.html) directly in your browser
+(double-click it, or right-click → Open with → your browser) if you'd rather
+not depend on GitHub Pages being up.
+
+Either way — see the note below on what does and doesn't carry over between
+the hosted version and a local copy.
 
 ## Where your data lives
 
-Everything is stored in your browser's local storage, tied to this file's location
-and the browser you open it in. That means:
+Everything is stored in your browser's local storage, tied to the page's
+**origin** (the hosted URL, or the local file's location) and the browser
+you open it in. That means:
 
 - It persists across restarts, closing the tab, etc.
-- It does **not** sync to another computer or another browser on this one.
-- Clearing your browser's site data / history for local files will erase it.
+- **The hosted link makes the app reachable from any machine — it does not
+  by itself sync your tasks and notes between machines.** Two different
+  computers opening `https://bhuvan-teja.github.io/BTRDesk/` each keep their
+  own separate data, same as two different browsers would.
+- Clearing your browser's site data / history will erase it.
+
+Real sync across machines (so the same tasks and notes show up everywhere)
+would mean swapping local storage for a small always-on data store — a
+private GitHub Gist accessed via the GitHub API is the natural next step for
+this repo, since it stays free and doesn't need a real backend. Not built
+yet; ask for it if the export/import routine below gets old.
 
 Because of that last point: **use "Export backup" in the bottom-left corner every
 so often** (weekly is plenty). It downloads a `btrdesk-backup-*.json` file. "Import"
